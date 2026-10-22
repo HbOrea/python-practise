@@ -106,16 +106,23 @@ assert add.__name__ == "add"
 from contextlib import contextmanager
 from collections.abc import Iterator
 
+# 用来区分「key 不存在」和「key 存在但值为 None」这两种情况如果 
 _SENTINEL = object()
 
+'''@contextmanager 是标准库 contextlib 提供的装饰器，
+作用是把一个生成器函数改造成可以直接用在 with 语句里的上下文管理器。
+它内部会自动给这个函数套上 _GeneratorContextManager 类（这个类实现了 __enter__ / __exit__）。
+'''
 @contextmanager
 def temporary_value(config: dict, key: str, value: object) -> Iterator[None]:
+    # dict.get 返回 _SENTINEL，说明原来没有这个 key；否则说明有这个 key。用 None 做默认值就不行了，因为字典里可能本来就存着 None。
     old_value = config.get(key, _SENTINEL)
     config[key] = value
     try:
         yield
     finally:
         if old_value is _SENTINEL:
+            #dict.pop(key, None) —— 带默认值删除
             config.pop(key, None)
         else:
             config[key] = old_value
